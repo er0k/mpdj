@@ -150,6 +150,7 @@ class mpdj
             $this->mpd->add($this->getRandomSong());
 	} catch (MPDException $e) {
 	    // better luck next time...
+	    $this->logError($e->getMessage());
 	}
 
 	return $this;
