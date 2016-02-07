@@ -118,6 +118,7 @@ class mpdj
 	$statsTimeout = 60 * 60;
 	if ((time() - $statsTimeout) > $this->statsUpdated) {
 	    $this->stats = $this->mpd->stats();
+	    $this->statsUpdated = time();
 	    print_r($this->stats);
 	}
 
