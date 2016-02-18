@@ -32,9 +32,23 @@ class mpdj
                 $this->mpd->play();
             }
 
+            $this->setCrossfade();
+
             sleep(self::REFRESH);
         }
-        
+    }
+
+    private function setCrossfade()
+    {
+        if ($this->status['playlistlength'] == 3 && !isset($this->status['xfade'])) {
+            try {
+                $this->mpd->crossfade(10);
+            } catch (MPDException $e) {
+                $this->logError($e->getMessage());
+            }
+        }
+
+        return $this;
     }
 
     private function checkForError()
@@ -115,7 +129,7 @@ class mpdj
     {
         // don't care so much about the most current stats
         // only check them once an hour
-        $statsTimeout = 60 * 60;
+        $statsTimeout = 3600;
             if ((time() - $statsTimeout) > $this->statsUpdated) {
             $this->stats = $this->mpd->stats();
             $this->statsUpdated = time();
