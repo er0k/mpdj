@@ -19,7 +19,7 @@ class mpdj
 
     public function start()
     {
-	$this->refreshStats();
+        $this->refreshStats();
 
         while (true) {
             $this->refreshStatus()->checkForError();
@@ -39,68 +39,68 @@ class mpdj
 
     private function checkForError()
     {
-	$this->error = isset($this->status['error']) ? $this->status['error'] : null;
-	if ($this->error) {
-	    $this->logError()->recoverFromError();
-	}
+        $this->error = isset($this->status['error']) ? $this->status['error'] : null;
+        if ($this->error) {
+            $this->logError()->recoverFromError();
+        }
 
-	return $this;
+        return $this;
     }
 
     private function logError($errorMsg = '')
     {
-	$errorMsg = empty($errorMsg) ? $this->error : $errorMsg;
-	error_log($errorMsg . "\n", 3, self::LOG);
-	echo "$errorMsg\n";
+        $errorMsg = empty($errorMsg) ? $this->error : $errorMsg;
+        error_log($errorMsg . "\n", 3, self::LOG);
+        echo "$errorMsg\n";
 
-	return $this;
+        return $this;
     }
 
     private function recoverFromError()
     {
         if ($this->error) {
-	    try {
-                $playlist = $this->mpd->playlistinfo();
-	    } catch (MPDException $e) {
-		$playlist = array();
-		$this->logError($e->getMessage());
-	    }
+            try {
+                    $playlist = $this->mpd->playlistinfo();
+            } catch (MPDException $e) {
+                $playlist = array();
+                $this->logError($e->getMessage());
+            }
             
-	    foreach ($playlist as $pos => $song) {
+            foreach ($playlist as $pos => $song) {
                 if (strpos($this->error, $song['file']) !== false) {
-		    try {
+                    try {
                         $this->mpd->delete($pos);
-		    } catch (MPDException $e) {
-			$this->logError($e->getMessage());
-			break;
-		    }
-		    $this->addRandomSong();
-		    try {
-		        $this->mpd->play($pos);
- 		    } catch (MPDException $e) {
-			// couldn't resume the last position in the playlist,
-			// should auto recover...
-			$this->logError($e->getMessage());
-		    }
-		    break;
+                    } catch (MPDException $e) {
+                        $this->logError($e->getMessage());
+                    break;
+                    }
+                    $this->addRandomSong();
+                    try {
+                        $this->mpd->play($pos);
+                    } catch (MPDException $e) {
+                        // couldn't resume the last position in the playlist,
+                        // should auto recover...
+                        $this->logError($e->getMessage());
+                    }
+                    break;
                 }
             }
             $this->clearError();
         }
 
-	return $this;
+        return $this;
     }
 
     private function clearError()
     {
-	try {
+        try {
             $this->mpd->clearerror();
-	} catch (MPDException $e) {
-	    $this->logError($e->getMessage());
-	}
+        } catch (MPDException $e) {
+            $this->logError($e->getMessage());
+        }
         $this->error = null;
 
-	return $this;
+        return $this;
     }
 
     private function refreshStatus()
@@ -108,26 +108,26 @@ class mpdj
         $this->status = $this->mpd->status();
         print_r($this->status);
 
-	return $this;
+        return $this;
     }
 
     private function refreshStats()
     {
-	// don't care so much about the most current stats
-	// only check them once an hour
-	$statsTimeout = 60 * 60;
-	if ((time() - $statsTimeout) > $this->statsUpdated) {
-	    $this->stats = $this->mpd->stats();
-	    $this->statsUpdated = time();
-	    print_r($this->stats);
-	}
+        // don't care so much about the most current stats
+        // only check them once an hour
+        $statsTimeout = 60 * 60;
+            if ((time() - $statsTimeout) > $this->statsUpdated) {
+            $this->stats = $this->mpd->stats();
+            $this->statsUpdated = time();
+            print_r($this->stats);
+        }
 
-	return $this;
+    return $this;
     }
 
     // @todo : check song against error log?
     // @todo : keep track of songs played in last X  hours,
-    //	       if in the list, get a new random song
+    //         if in the list, get a new random song
     private function getRandomSong()
     {
         $db = $this->getDb();
@@ -146,14 +146,14 @@ class mpdj
 
     private function addRandomSong()
     {
-	try {
+        try {
             $this->mpd->add($this->getRandomSong());
-	} catch (MPDException $e) {
-	    // better luck next time...
-	    $this->logError($e->getMessage());
-	}
+        } catch (MPDException $e) {
+            // better luck next time...
+            $this->logError($e->getMessage());
+        }
 
-	return $this;
+        return $this;
     }
 
     private function cleanUpPlaylist()
@@ -161,14 +161,14 @@ class mpdj
         if ($this->status['song'] >= 1) {
             echo "cleaning up playlist\n";
             $previousSong = $this->status['song'] - 1;
-	    try {
-                $this->mpd->delete("0:$previousSong");
-	    } catch (MPDException $e) {
-		$this->logError($e->getMessage());
-	    }
+        try {
+            $this->mpd->delete("0:$previousSong");
+        } catch (MPDException $e) {
+            $this->logError($e->getMessage());
         }
+    }
 
-	return $this;
+        return $this;
     }
 
     private function isLastSong()
@@ -189,16 +189,16 @@ class mpdj
 
     private function getDb()
     {
-	$this->refreshStats();
-	
+        $this->refreshStats();
+    
         if (!$this->db || $this->stats['db_update'] > $this->dbUpdated) {
-	    echo "getting db from mpd...";
-	    $this->db = $this->mpd->listall();
-	    echo "ok\n";
-	    $this->dbUpdated = time();
-	}
+            echo "getting db from mpd...";
+            $this->db = $this->mpd->listall();
+            echo "ok\n";
+            $this->dbUpdated = time();
+        }
 
-	return $this->db;
+        return $this->db;
     }
 }
 
