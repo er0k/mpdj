@@ -74,19 +74,19 @@ class mpdj
     {
         if ($this->error) {
             try {
-                    $playlist = $this->mpd->playlistinfo();
+                $playlist = $this->mpd->playlistinfo();
             } catch (MPDException $e) {
                 $playlist = array();
                 $this->logError($e->getMessage());
             }
-            
+
             foreach ($playlist as $pos => $song) {
                 if (strpos($this->error, $song['file']) !== false) {
                     try {
                         $this->mpd->delete($pos);
                     } catch (MPDException $e) {
                         $this->logError($e->getMessage());
-                    break;
+                        break;
                     }
                     $this->addRandomSong();
                     try {
@@ -130,13 +130,13 @@ class mpdj
         // don't care so much about the most current stats
         // only check them once an hour
         $statsTimeout = 3600;
-            if ((time() - $statsTimeout) > $this->statsUpdated) {
+        if ((time() - $statsTimeout) > $this->statsUpdated) {
             $this->stats = $this->mpd->stats();
             $this->statsUpdated = time();
             print_r($this->stats);
         }
 
-    return $this;
+        return $this;
     }
 
     // @todo : check song against error log?
@@ -175,12 +175,12 @@ class mpdj
         if ($this->status['song'] >= 1) {
             echo "cleaning up playlist\n";
             $previousSong = $this->status['song'] - 1;
-        try {
-            $this->mpd->delete("0:$previousSong");
-        } catch (MPDException $e) {
-            $this->logError($e->getMessage());
+            try {
+                $this->mpd->delete("0:$previousSong");
+            } catch (MPDException $e) {
+                $this->logError($e->getMessage());
+            }
         }
-    }
 
         return $this;
     }
@@ -204,7 +204,7 @@ class mpdj
     private function getDb()
     {
         $this->refreshStats();
-    
+
         if (!$this->db || $this->stats['db_update'] > $this->dbUpdated) {
             echo "getting db from mpd...";
             $this->db = $this->mpd->listall();
@@ -215,4 +215,3 @@ class mpdj
         return $this->db;
     }
 }
-
