@@ -221,7 +221,7 @@ class mpdj
         $lastSongId = $this->songId;
         $this->songId = $this->status['songid'];
 
-        if ($this->status['songid'] != $this->songId) {
+        if ($this->status['songid'] != $lastSongId) {
             return true;
         }
 
