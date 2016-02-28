@@ -209,8 +209,8 @@ class mpdj
 
     private function getCurrentSong()
     {
-        echo "===============";
         $this->currentSong = $this->mpd->currentsong();
+        print_r($this->currentSong);
         $this->writeJsonFile(self::JSON_SONG, $this->currentSong);
 
         return $this->currentSong;
