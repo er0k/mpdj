@@ -4,7 +4,8 @@ class mpdj
 {
     const REFRESH = 3;
     const LOG = '/var/log/mpd/mpdj.log';
-    const JSON = '/tmp/mpd-status.json';
+    const JSON_STATUS = '/tmp/mpd-status.json';
+    const JSON_SONG = '/tmp/mpd-song.json';
 
     private $mpd;
     private $status;
@@ -12,6 +13,8 @@ class mpdj
     private $db;
     private $dbUpdated = 0;
     private $statsUpdated = 0;
+    private $songId;
+    private $currentSong;
 
     function __construct(MPD $mpd)
     {
@@ -25,6 +28,10 @@ class mpdj
         while (true) {
             $this->refreshStatus();
             $this->checkForError();
+            
+            if ($this->hasSongChanged()) {
+                $this->getCurrentSong();
+            }
 
             if ($this->isLastSong()) {
                 $this->addRandomSong();
@@ -123,15 +130,19 @@ class mpdj
     private function refreshStatus()
     {
         $this->status = $this->mpd->status();
-        $this->writeJsonFile($this->status);
+        $this->writeJsonFile(self::JSON_STATUS, $this->status);
         print_r($this->status);
 
         return $this;
     }
 
-    private function writeJsonFile($contents = array())
+    private function writeJsonFile($file = '', $contents = array())
     {
-        file_put_contents(self::JSON, json_encode($contents));
+        if (empty($file) || empty($contents)) {
+            return;
+        }
+
+        file_put_contents($file, json_encode($contents));
 
         return $this;
     }
@@ -194,6 +205,29 @@ class mpdj
         }
 
         return $this;
+    }
+
+    private function getCurrentSong()
+    {
+        echo "===============";
+        $this->currentSong = $this->mpd->currentsong();
+        $this->writeJsonFile(self::JSON_SONG, $this->currentSong);
+
+        return $this->currentSong;
+    }
+
+    private function hasSongChanged()
+    {
+        var_dump($this->status['songid']);
+        var_dump($this->songId);
+        $lastSongId = $this->songId;
+        $this->songId = $this->status['songid'];
+
+        if ($this->status['songid'] != $this->songId) {
+            return true;
+        }
+
+        return false;
     }
 
     private function isLastSong()
