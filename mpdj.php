@@ -218,8 +218,6 @@ class mpdj
 
     private function hasSongChanged()
     {
-        var_dump($this->status['songid']);
-        var_dump($this->songId);
         $lastSongId = $this->songId;
         $this->songId = $this->status['songid'];
 
