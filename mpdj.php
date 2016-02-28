@@ -4,6 +4,7 @@ class mpdj
 {
     const REFRESH = 3;
     const LOG = '/var/log/mpd/mpdj.log';
+    const JSON = '/tmp/mpd-status.json';
 
     private $mpd;
     private $status;
@@ -22,10 +23,12 @@ class mpdj
         $this->refreshStats();
 
         while (true) {
-            $this->refreshStatus()->checkForError();
+            $this->refreshStatus();
+            $this->checkForError();
 
             if ($this->isLastSong()) {
-                $this->addRandomSong()->cleanUpPlaylist();
+                $this->addRandomSong();
+                $this->cleanUpPlaylist();
             }
 
             if (!$this->isPlaying()) {
@@ -120,7 +123,15 @@ class mpdj
     private function refreshStatus()
     {
         $this->status = $this->mpd->status();
+        $this->writeJsonFile($this->status);
         print_r($this->status);
+
+        return $this;
+    }
+
+    private function writeJsonFile($contents = array())
+    {
+        file_put_contents(self::JSON, json_encode($contents));
 
         return $this;
     }
