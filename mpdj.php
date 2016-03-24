@@ -7,6 +7,7 @@ class mpdj
     const JSON_STATUS = '/tmp/mpd-status.json';
     const JSON_SONG = '/tmp/mpd-song.json';
     const ICECAST_URL = 'http://deb.r0k:8001/';
+    const MUSIC_DIR = '/Music/';
 
     private $mpd;
     private $status;
@@ -191,25 +192,43 @@ class mpdj
     {
         $db = $this->getDb();
 
-        $randKey = array_rand($db);
-        while (is_array($db[$randKey])) {
-            $randKey = array_rand($db);
+        $randomSong = $db[array_rand($db)];
+        while (!$this->isFile($randomSong)) {
+            $randomSong = $db[array_rand($db)];
         }
-
-        $randomSong = $db[$randKey];
 
         echo "$randomSong\n";
 
         return $randomSong;
     }
 
-    private function addRandomSong()
+    private function isFile(&$song)
     {
-        try {
-            $this->mpd->add($this->getRandomSong());
-        } catch (MPDException $e) {
-            // better luck next time...
-            $this->logError($e->getMessage());
+        if (is_file(self::MUSIC_DIR . $song)) {
+            return true;
+        }
+
+        if (
+            is_array($song)
+            && isset($song['file'])
+            && is_file(self::MUSIC_DIR . $song['file'])
+        ) {
+            $song = $song['file'];
+            return true;
+        }
+
+        return false;
+    }
+
+    private function addRandomSong($num = 1)
+    {
+        for (; $num > 0; $num--) {
+            try {
+                $this->mpd->add($this->getRandomSong());
+            } catch (MPDException $e) {
+                // better luck next time...
+                $this->logError($e->getMessage());
+            }
         }
 
         return $this;
