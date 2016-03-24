@@ -198,6 +198,7 @@ class mpdj
             echo "cleaning up playlist\n";
             $previousSong = $this->status['song'] - 1;
             try {
+                // only keep 1 previous song in the playlist
                 $this->mpd->delete("0:$previousSong");
             } catch (MPDException $e) {
                 $this->logError($e->getMessage());
