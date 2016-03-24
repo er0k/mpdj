@@ -6,6 +6,7 @@ class mpdj
     const LOG = '/var/log/mpd/mpdj.log';
     const JSON_STATUS = '/tmp/mpd-status.json';
     const JSON_SONG = '/tmp/mpd-song.json';
+    const ICECAST_URL = 'http://deb.r0k:8001/';
 
     private $mpd;
     private $status;
@@ -15,6 +16,7 @@ class mpdj
     private $statsUpdated = 0;
     private $songId;
     private $currentSong;
+    private $listeners = -1;
 
     function __construct(MPD $mpd)
     {
@@ -130,10 +132,31 @@ class mpdj
     private function refreshStatus()
     {
         $this->status = $this->mpd->status();
+        $this->status['listeners'] = $this->getListeners();
         $this->writeJsonFile(self::JSON_STATUS, $this->status);
         print_r($this->status);
 
         return $this;
+    }
+
+    // @todo : this is super ghetto
+    private function getListeners()
+    {
+        $ch = curl_init(self::ICECAST_URL);
+        curl_setopt_array($ch, array(
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 1,
+            CURLOPT_TIMEOUT => 1,
+        ));
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        $lines = explode("\n", $response);
+        $line = $lines[48];
+        preg_match('/[0-9*]/', $line, $matches);
+        $this->listeners = isset($matches[0]) ? $matches[0] : $this->listeners;
+
+        return $this->listeners;
     }
 
     private function writeJsonFile($file = '', $contents = array())
