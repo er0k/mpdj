@@ -2,6 +2,7 @@
 
 import gc
 import icecast
+import hashlib
 import json
 import mpd
 import os
@@ -20,6 +21,7 @@ class mpdj:
     song = {}
     playlist = {}
     stats = {}
+    streams = {}
     listeners = {"count": -1}
     dbUpdatedAt = 0
     mpd = None
@@ -64,6 +66,8 @@ class mpdj:
         self.updateSong()
         self.updatePlaylist()
         self.updateListeners()
+        self.checkForError()
+        self.checkForStreams()
         self.writeJson()
 
     def tableOne(self):
@@ -74,15 +78,16 @@ class mpdj:
                 self.updateSong()
                 self.checkForError()
                 if 'playlist' in changed:
-                    self.updatePlaylist()          
+                    self.updatePlaylist()
+                self.checkForStreams()
                 if self.isLastSong():
                     self.addRandomSong()
                     self.cleanUpPlaylist()
                 self.setCrossfade()
                 if not self.isPlaying():
-                    self.mpd.play()  
+                    self.mpd.play()
                 self.writeJson()
-                gc.collect()  
+                gc.collect()
 
     def tableTwo(self):
         while True:
@@ -194,6 +199,47 @@ class mpdj:
     def clearError(self):
         self.mpd.clearerror()
         self.error = None
+
+    def checkForStreams(self):
+        self.checkPlaylistForStreams()
+        self.checkCurrentSongForStream()
+
+    def checkPlaylistForStreams(self):
+        for song in self.playlist:
+            # if we don't have a modified timestamp, assume it is a stream instead of a file
+            # I don't currently know a better way to check
+            # maybe song length? or look for http in file?
+            if 'last-modified' not in song:
+                streamInfo = self.getStreamInfo(song)
+                if streamInfo:
+                    self.setPlaylistStreamInfo(int(song['pos']), streamInfo)
+
+    def getStreamInfo(self, song):
+        if song['id'] not in self.streams:
+            file = '/tmp/%s.json' % hashlib.md5(song['file']).hexdigest()
+            if not os.path.isfile(file):
+                return False
+            # need to clean up these temp files probably...
+            with open(file, 'r') as streamFile:
+                self.streams[song['id']] = json.load(streamFile)
+        return self.streams[song['id']]
+
+    def setPlaylistStreamInfo(self, pos, info):
+        self.playlist[pos]['name'] = info['info']['title']
+        self.playlist[pos]['time'] = info['info']['length']
+        self.playlist[pos]['file'] = "https://www.youtube.com/watch?v=%s" % info['id']
+
+    def setCurrentSongStreamInfo(self, info):
+        self.song['name'] = info['info']['title']
+        self.song['time'] = info['info']['length']
+        self.song['file'] = "https://www.youtube.com/watch?v=%s" % info['id']
+
+    def checkCurrentSongForStream(self):
+        if 'last-modified' not in self.song:
+            streamInfo = self.getStreamInfo(self.song)
+            if streamInfo:
+                self.setCurrentSongStreamInfo(streamInfo)
+
 
     def updateListeners(self):
         self.previousListenerCount = self.listeners['count']
