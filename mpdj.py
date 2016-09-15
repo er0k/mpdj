@@ -14,8 +14,9 @@ import time
 class mpdj:
 
     key_file = '/home/er0k/.www/keys.json'
-    json_file = '/tmp/mpd.json'
-    error_log = '/tmp/mpdj.log'
+    json_file = '/tmp/mpdj.json'
+    bad_log = '/etc/mpdj/bad'
+    nope_log = '/etc/mpdj/nope'
     music_dir = '/Music/'
     status = {}
     song = {}
@@ -137,7 +138,7 @@ class mpdj:
     def getRandomSong(self):
         self.db = self.getDb()
         randomSong = ''
-        while not self.isFile(randomSong):
+        while not self.isFile(randomSong) and not self.isGood(randomSong):
             randomSong = random.choice(self.db)
         return randomSong['file']
 
@@ -148,6 +149,17 @@ class mpdj:
             self.db = self.mpd.listall()
             self.dbUpdatedAt = time.time()
         return self.db
+
+    def isGood(self, song = ''):
+        if not song:
+            return False
+        with open(self.bad_log) as bad:
+            if song in bad.readline():
+                return False
+        with open (self.nope_log) as nope:
+            if song in nope.readline():
+                return False
+        return True
 
     def isFile(self, song = ''):
         if 'file' not in song:
@@ -180,7 +192,7 @@ class mpdj:
     def logError(self, errorMsg = ''):
         errorMsg = self.error if not errorMsg else errorMsg
         print "ERROR! %s" % errorMsg
-        with open(self.error_log, 'a') as logfile:
+        with open(self.bad_log, 'a') as logfile:
             logfile.write(errorMsg + "\n")
 
     def recoverFromError(self):
