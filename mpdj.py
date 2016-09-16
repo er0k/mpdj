@@ -153,11 +153,13 @@ class mpdj:
     def isGood(self, song = ''):
         if not song:
             return False
+        if 'file' not in song:
+            return False
         with open(self.bad_log) as bad:
-            if song in bad.readline():
+            if song['file'] in bad.readline():
                 return False
         with open (self.nope_log) as nope:
-            if song in nope.readline():
+            if song['file'] in nope.readline():
                 return False
         return True
 
